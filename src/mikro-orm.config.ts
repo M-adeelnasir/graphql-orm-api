@@ -1,10 +1,11 @@
+import { User } from './entities/User';
 import { __prod__ } from './constants';
 import { Post } from './entities/Post';
 import { Options } from '@mikro-orm/core';
 import path from 'path';
 
 const config: Options = {
-  entities: [Post],
+  entities: [Post, User],
   dbName: 'lireddit',
   type: 'postgresql',
   password: 'root',
