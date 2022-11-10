@@ -1,4 +1,12 @@
-import { Resolver, Arg, Ctx, Mutation, InputType, Field } from 'type-graphql';
+import {
+  Resolver,
+  Arg,
+  Ctx,
+  Mutation,
+  InputType,
+  Field,
+  ObjectType,
+} from 'type-graphql';
 import argon from 'argon2';
 import { MyContext } from './../types';
 import { User } from '../entities/User';
@@ -13,24 +21,58 @@ class RegisterInput {
   password: string;
 }
 
+@ObjectType()
+class FieldError {
+  @Field()
+  field: string;
+  @Field()
+  message: string;
+}
+
+@ObjectType()
+class UserResponse {
+  @Field(() => [FieldError], { nullable: true })
+  errors?: FieldError[];
+  @Field(() => User, { nullable: true })
+  user?: User;
+}
+
 @Resolver()
 //@register user
 export class UserResolver {
-  @Mutation(() => User)
+  @Mutation(() => UserResponse)
   async register(
     @Arg('options') options: RegisterInput,
     @Ctx() { emFork }: MyContext
-  ): Promise<User> {
+  ): Promise<UserResponse> {
     try {
       const { email, name, password } = options;
+      if (password.length <= 3) {
+        return {
+          errors: [
+            {
+              field: 'password',
+              message: 'lenght must be geater then 3',
+            },
+          ],
+        };
+      }
       const hash = await argon.hash(password);
       const user = emFork.create(User, { email, name, password: hash });
       await emFork.persistAndFlush(user);
-      return user;
+      return { user };
     } catch (err) {
       if (err.code | err.detail.includes('already exists.')) {
+        return {
+          errors: [
+            {
+              field: 'Email',
+              message: 'Email is already registered',
+            },
+          ],
+        };
       }
-      return err.message;
+      return err;
     }
   }
 }
