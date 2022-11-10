@@ -11,6 +11,13 @@
     "dev": "nodemon build/index.js",
     "dev2": "nodemon --exec ts-node src/index.ts"
   },
+  "mikro-orm": {
+    "useTsNode": true,
+    "configPaths": [
+      "./src/mikro-orm.config.ts",
+      "./build/mikro-orm.config.js"
+    ]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -20,5 +27,13 @@
     "nodemon": "^2.0.20",
     "ts-node": "^10.9.1",
     "typescript": "^4.8.4"
+  },
+  "dependencies": {
+    "@mikro-orm/cli": "^5.5.2",
+    "@mikro-orm/core": "^5.5.2",
+    "@mikro-orm/migrations": "^5.5.2",
+    "@mikro-orm/postgresql": "^5.5.2",
+    "mikro-orm": "^5.5.2",
+    "pg": "^8.8.0"
   }
 }
