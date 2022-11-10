@@ -11,6 +11,12 @@ import argon from 'argon2';
 import { MyContext } from './../types';
 import { User } from '../entities/User';
 
+declare module 'express-session' {
+  export interface SessionData {
+    user: any;
+  }
+}
+
 @InputType()
 class RegisterInput {
   @Field()
@@ -86,7 +92,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async login(
     @Arg('options') options: LoginInput,
-    @Ctx() { emFork }: MyContext
+    @Ctx() { emFork, req }: MyContext
   ): Promise<UserResponse> {
     const { email, password } = options;
     const user = await emFork.findOne(User, { email });
@@ -111,6 +117,8 @@ export class UserResolver {
         ],
       };
     }
+
+    req.session.user = user.id;
 
     return { user };
   }

@@ -9,20 +9,49 @@ import { buildSchema } from 'type-graphql';
 import { HealthCheck } from './resolvers/health-check';
 import { UserResolver } from './resolvers/user';
 
+import session from 'express-session';
+import connectRedis from 'connect-redis';
+import * as redis from 'redis';
+
+const RedisStore = connectRedis(session);
+const redisClient = redis.createClient({
+  legacyMode: true,
+});
+
 const main = async () => {
   const orm = await MikroORM.init(config);
   const emFork = orm.em.fork();
   await orm.getMigrator().up();
+  const app = express();
+
+  await redisClient.connect().then(() => console.log('connected to redis'));
+  app.use(
+    session({
+      name: 'qid',
+      store: new RedisStore({
+        client: redisClient as any,
+        disableTouch: true,
+      }),
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 356 * 10, //10years
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: __prod__,
+      },
+      saveUninitialized: false,
+      secret: 'skdjjcsjhfj',
+      resave: false,
+    })
+  );
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
       resolvers: [HealthCheck, PostResolver, UserResolver],
       validate: false,
     }),
-    context: () => ({ emFork }),
+    context: ({ req, res }) => ({ emFork, req, res }),
   });
 
-  const app = express();
   await apolloServer.start();
   apolloServer.applyMiddleware({ app });
 

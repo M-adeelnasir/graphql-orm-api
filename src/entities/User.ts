@@ -16,7 +16,6 @@ export class User {
   @Property({ type: 'text', unique: true, index: true })
   email!: string;
 
-  @Field()
   @Property({ type: 'text' })
   password!: string;
 }
