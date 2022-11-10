@@ -20,11 +20,18 @@ class RegisterInput {
   @Field()
   password: string;
 }
+@InputType()
+class LoginInput {
+  @Field()
+  email: string;
+  @Field()
+  password: string;
+}
 
 @ObjectType()
 class FieldError {
   @Field()
-  field: string;
+  field?: string;
   @Field()
   message: string;
 }
@@ -74,5 +81,37 @@ export class UserResolver {
       }
       return err;
     }
+  }
+
+  @Mutation(() => UserResponse)
+  async login(
+    @Arg('options') options: LoginInput,
+    @Ctx() { emFork }: MyContext
+  ): Promise<UserResponse> {
+    const { email, password } = options;
+    const user = await emFork.findOne(User, { email });
+    if (!user) {
+      return {
+        errors: [
+          {
+            message: 'Invalid Credentials',
+          },
+        ],
+      };
+    }
+
+    const isMatch = await argon.verify(user.password, password);
+
+    if (!isMatch) {
+      return {
+        errors: [
+          {
+            message: 'Invalid Credentials',
+          },
+        ],
+      };
+    }
+
+    return { user };
   }
 }
