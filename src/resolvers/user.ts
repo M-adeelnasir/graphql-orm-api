@@ -6,6 +6,7 @@ import {
   InputType,
   Field,
   ObjectType,
+  Query,
 } from 'type-graphql';
 import argon from 'argon2';
 import { MyContext } from './../types';
@@ -92,7 +93,7 @@ export class UserResolver {
   @Mutation(() => UserResponse)
   async login(
     @Arg('options') options: LoginInput,
-    @Ctx() { emFork, req }: MyContext
+    @Ctx() { emFork, req, res }: MyContext
   ): Promise<UserResponse> {
     const { email, password } = options;
     const user = await emFork.findOne(User, { email });
@@ -118,8 +119,24 @@ export class UserResolver {
       };
     }
 
+    res.cookie('user', user.email);
+
     req.session.user = user.id;
 
+    console.log(req.session);
+
     return { user };
+  }
+
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() { req, emFork }: MyContext): Promise<User | null> {
+    console.log(req.session);
+
+    if (!req.session.user) {
+      return null;
+    }
+    const user = await emFork.findOne(User, { id: req.session.user });
+
+    return user;
   }
 }
